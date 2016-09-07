@@ -1,8 +1,8 @@
-infix operator |> { associativity left }
-func |> <T, U> (x: T, f: T -> U) -> U {
+infix operator |> : LogicalConjunctionPrecedence
+func |> <T, U> (x: T, f: (T) -> U) -> U {
   return f(x)
 }
 
-func count(string: String) -> String.Index.Distance {
+func count(_ string: String) -> String.IndexDistance {
     return string.characters.count
 }

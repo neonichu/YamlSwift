@@ -1,4 +1,15 @@
 import Foundation
+fileprivate func < <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
+  switch (lhs, rhs) {
+  case let (l?, r?):
+    return l < r
+  case (nil, _?):
+    return true
+  default:
+    return false
+  }
+}
+
 
 enum TokenType: Swift.String {
   case YamlDirective = "%YAML"
@@ -62,7 +73,7 @@ let plainOutPattern =
     "([\(safeOut)]#|:(?![ \\t]|\(bBreak))|[\(safeOut)]|[ \\t])+"
 let plainInPattern =
     "([\(safeIn)]#|:(?![ \\t]|\(bBreak))|[\(safeIn)]|[ \\t]|\(bBreak))+"
-let dashPattern = regex("^-([ \\t]+(?!#|\(bBreak))|(?=[ \\t\\n]))")
+let dashPattern = regex("^-([ \\t]+(?!#|\(bBreak))|(?=[ \\t\\n]))")!
 let finish = "(?= *(,|\\]|\\}|( #.*)?(\(bBreak)|$)))"
 let tokenPatterns: [TokenPattern] = [
   (.YamlDirective, regex("^%YAML(?= )")),
@@ -102,16 +113,16 @@ let tokenPatterns: [TokenPattern] = [
   (.StringFI, regex("^\(plainInPattern)")),
 ]
 
-func escapeErrorContext (text: String) -> String {
-  let endIndex = text.startIndex.advancedBy(50, limit: text.endIndex)
-  let escaped = text.substringToIndex(endIndex)
+func escapeErrorContext (_ text: String) -> String {
+  let endIndex = text.characters.index(text.startIndex, offsetBy: 50, limitedBy: text.endIndex)
+  let escaped = text.substring(to: endIndex ?? text.endIndex)
       |> replace(regex("\\r"), template: "\\\\r")
       |> replace(regex("\\n"), template: "\\\\n")
       |> replace(regex("\""), template: "\\\\\"")
   return "near \"\(escaped)\""
 }
 
-func tokenize (text: String) -> Result<[TokenMatch]> {
+func tokenize (_ text: String) -> Result<[TokenMatch]> {
   var text = text
   var matchList: [TokenMatch] = []
   var indents = [0]
@@ -127,7 +138,7 @@ func tokenize (text: String) -> Result<[TokenMatch]> {
         case .NewLine:
           let match = text |> substringWithRange(range)
           let lastIndent = indents.last ?? 0
-          let rest = match.substringFromIndex(match.startIndex.successor())
+          let rest = match.substring(from: match.characters.index(after: match.startIndex))
           let spaces = rest.characters.count
           let nestedBlockSequence =
                 matches(text |> substringFromIndex(rangeEnd), regex: dashPattern)
@@ -157,12 +168,12 @@ func tokenize (text: String) -> Result<[TokenMatch]> {
 
         case .Dash, .QuestionMark:
           let match = text |> substringWithRange(range)
-          let index = match.startIndex.successor()
+          let index = match.characters.index(after: match.startIndex)
           let indent = match.characters.count
           indents.append((indents.last ?? 0) + indent)
           matchList.append(
-              TokenMatch(tokenPattern.type, match.substringToIndex(index)))
-          matchList.append(TokenMatch(.Indent, match.substringFromIndex(index)))
+              TokenMatch(tokenPattern.type, match.substring(to: index)))
+          matchList.append(TokenMatch(.Indent, match.substring(from: index)))
 
         case .ColonFO:
           if insideFlow > 0 {
@@ -192,7 +203,7 @@ func tokenize (text: String) -> Result<[TokenMatch]> {
           let lastIndent = indents.last ?? 0
           let minIndent = 1 + lastIndent
           let blockPattern = regex(("^(\(bBreak) *)*(\(bBreak)" +
-              "( {\(minIndent),})[^ ].*(\(bBreak)( *|\\3.*))*)(?=\(bBreak)|$)"))
+              "( {\(minIndent),})[^ ].*(\(bBreak)( *|\\3.*))*)(?=\(bBreak)|$)"))!
           let (lead, rest) = text |> splitLead(blockPattern)
           text = rest
           let block = (lead
@@ -210,7 +221,7 @@ func tokenize (text: String) -> Result<[TokenMatch]> {
           }
           let indent = (indents.last ?? 0)
           let blockPattern = regex(("^\(bBreak)( *| {\(indent),}" +
-              "\(plainOutPattern))(?=\(bBreak)|$)"))
+              "\(plainOutPattern))(?=\(bBreak)|$)"))!
           var block = text
                 |> substringWithRange(range)
                 |> replace(regex("^[ \\t]+|[ \\t]+$"), template: "")

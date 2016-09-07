@@ -1,5 +1,5 @@
 public enum Yaml {
-  case Null
+  case null
   case Bool(Swift.Bool)
   case Int(Swift.Int)
   case Double(Swift.Double)
@@ -8,31 +8,31 @@ public enum Yaml {
   case Dictionary([Yaml: Yaml])
 }
 
-extension Yaml: NilLiteralConvertible {
+extension Yaml: ExpressibleByNilLiteral {
   public init(nilLiteral: ()) {
-    self = .Null
+    self = .null
   }
 }
 
-extension Yaml: BooleanLiteralConvertible {
+extension Yaml: ExpressibleByBooleanLiteral {
   public init(booleanLiteral: BooleanLiteralType) {
     self = .Bool(booleanLiteral)
   }
 }
 
-extension Yaml: IntegerLiteralConvertible {
+extension Yaml: ExpressibleByIntegerLiteral {
   public init(integerLiteral: IntegerLiteralType) {
     self = .Int(integerLiteral)
   }
 }
 
-extension Yaml: FloatLiteralConvertible {
+extension Yaml: ExpressibleByFloatLiteral {
   public init(floatLiteral: FloatLiteralType) {
     self = .Double(floatLiteral)
   }
 }
 
-extension Yaml: StringLiteralConvertible {
+extension Yaml: ExpressibleByStringLiteral {
   public init(stringLiteral: StringLiteralType) {
     self = .String(stringLiteral)
   }
@@ -46,13 +46,13 @@ extension Yaml: StringLiteralConvertible {
   }
 }
 
-extension Yaml: ArrayLiteralConvertible {
+extension Yaml: ExpressibleByArrayLiteral {
   public init(arrayLiteral elements: Yaml...) {
     self = .Array(elements)
   }
 }
 
-extension Yaml: DictionaryLiteralConvertible {
+extension Yaml: ExpressibleByDictionaryLiteral {
   public init(dictionaryLiteral elements: (Yaml, Yaml)...) {
     var dictionary = [Yaml: Yaml]()
     for (k, v) in elements {
@@ -65,7 +65,7 @@ extension Yaml: DictionaryLiteralConvertible {
 extension Yaml: CustomStringConvertible {
   public var description: Swift.String {
     switch self {
-    case .Null:
+    case .null:
       return "Null"
     case .Bool(let b):
       return "Bool(\(b))"
@@ -90,15 +90,15 @@ extension Yaml: Hashable {
 }
 
 extension Yaml {
-  public static func load (text: Swift.String) -> Result<Yaml> {
+  public static func load (_ text: Swift.String) -> Result<Yaml> {
     return tokenize(text) >>=- parseDoc
   }
 
-  public static func loadMultiple (text: Swift.String) -> Result<[Yaml]> {
+  public static func loadMultiple (_ text: Swift.String) -> Result<[Yaml]> {
     return tokenize(text) >>=- parseDocs
   }
 
-  public static func debug (text: Swift.String) -> Result<Yaml> {
+  public static func debug (_ text: Swift.String) -> Result<Yaml> {
     let result = tokenize(text)
         >>- { tokens in print("\n====== Tokens:\n\(tokens)"); return tokens }
         >>=- parseDoc
@@ -109,7 +109,7 @@ extension Yaml {
     return result
   }
 
-  public static func debugMultiple (text: Swift.String) -> Result<[Yaml]> {
+  public static func debugMultiple (_ text: Swift.String) -> Result<[Yaml]> {
     let result = tokenize(text)
         >>- { tokens in print("\n====== Tokens:\n\(tokens)"); return tokens }
         >>=- parseDocs
@@ -132,10 +132,10 @@ extension Yaml {
         if array.indices.contains(index) {
           return array[index]
         } else {
-          return .Null
+          return .null
         }
       default:
-        return .Null
+        return .null
       }
     }
     set {
@@ -143,13 +143,13 @@ extension Yaml {
       switch self {
       case .Array(let array):
         let emptyCount = max(0, index + 1 - array.count)
-        let empty = [Yaml](count: emptyCount, repeatedValue: .Null)
+        let empty = [Yaml](repeating: .null, count: emptyCount)
         var new = array
-        new.appendContentsOf(empty)
+        new.append(contentsOf: empty)
         new[index] = newValue
         self = .Array(new)
       default:
-        var array = [Yaml](count: index + 1, repeatedValue: .Null)
+        var array = [Yaml](repeating: .null, count: index + 1)
         array[index] = newValue
         self = .Array(array)
       }
@@ -160,9 +160,9 @@ extension Yaml {
     get {
       switch self {
       case .Dictionary(let dictionary):
-        return dictionary[key] ?? .Null
+        return dictionary[key] ?? .null
       default:
-        return .Null
+        return .null
       }
     }
     set {
@@ -257,7 +257,7 @@ extension Yaml {
 
 public func == (lhs: Yaml, rhs: Yaml) -> Bool {
   switch (lhs, rhs) {
-  case (.Null, .Null):
+  case (.null, .null):
     return true
   case (.Bool(let lv), .Bool(let rv)):
     return lv == rv
